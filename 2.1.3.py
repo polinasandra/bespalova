@@ -3,13 +3,13 @@ import re
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font, Border, Side
-# D:/пользователи/OneDrive/Рабочий стол/vacancies_by_year.csv
+# D:/пользователи/OneDrive/Рабочий стол/vacancies.csv
+from prettytable import PrettyTable, ALL
 import matplotlib.pyplot as plt
 import numpy as np
 from jinja2 import Environment, FileSystemLoader
 import pathlib
 import pdfkit
-
 
 requests = ["Введите название файла: ", "Введите название профессии: "]
 
@@ -31,6 +31,54 @@ class Vacancy:
         "UZS": 0.0055,
     }
 
+    @staticmethod
+    def format_string(x):
+        str = re.sub(r'<.*?>', '', x)
+        return re.sub(r'\s+', ' ', str).strip()
+
+    @staticmethod
+    def cut_the_str(str):
+        if len(str) > 100:
+            newstr = (str[:100] + '...')
+        else:
+            newstr = str
+        return newstr
+
+    @property
+    def experience(self):
+        return self.experience_items[self.experience_id]
+
+    experience_items = {
+        'Нет опыта': 0,
+        'От 1 года до 3 лет': 1,
+        'От 3 до 6 лет': 2,
+        'Более 6 лет': 3
+    }
+    translate_currency = {
+        'AZN': 'Манаты',
+        'BYR': 'Белорусские рубли',
+        'EUR': 'Евро',
+        'GEL': 'Грузинский лари',
+        'KGS': 'Киргизский сом',
+        'KZT': 'Тенге',
+        'RUR': 'Рубли',
+        'UAH': 'Гривны',
+        'USD': 'Доллары',
+        'UZS': 'Узбекский сум'
+    }
+    translate_experience = {
+        'noExperience': 'Нет опыта',
+        'between1And3': 'От 1 года до 3 лет',
+        'between3And6': 'От 3 до 6 лет',
+        'moreThan6': 'Более 6 лет',
+    }
+
+    def make_array(self):
+        result = []
+        for key in self.names:
+            result.append(getattr(self, key))
+        return result
+
     def __init__(self, vacancy):
         self.name = vacancy['name']
         self.salary_from = int(vacancy['salary_from'].split('.')[0])
@@ -38,13 +86,82 @@ class Vacancy:
         self.salary_currency = vacancy['salary_currency']
         self.average_salary = self.currency_to_rub[self.salary_currency] * (self.salary_from + self.salary_to) / 2
         self.area_name = vacancy['area_name']
-        self.published_at = int(vacancy['published_at'].rsplit('T', 1)[0].split('-')[0])
+        self.year = int(vacancy['published_at'].rsplit('T', 1)[0].split('-')[0])
+        self.published = vacancy['published_at']
+        arr = vacancy['published_at'].rsplit('T', 1)[0].replace('-', '.').split('.')
+        arr.reverse()
+        self.published_at = '.'.join(arr)
+        if len(vacancy) > 6:
+            self.description = self.cut_the_str(self.format_string(vacancy['description']))
+            self.skills = vacancy['key_skills'].split('\n')
+            self.key_skills = self.cut_the_str(vacancy['key_skills'])
+            self.len_skills = len(self.skills)
+            self.experience_id = self.translate_experience[vacancy['experience_id']]
+            if vacancy['premium'].lower() == 'true':
+                self.premium = 'Да'
+            elif vacancy['premium'].lower() == 'false':
+                self.premium = 'Нет'
+            self.employer_name = vacancy['employer_name']
+            if vacancy['salary_gross'].lower() == 'true':
+                self.salary_gross = 'Без вычета налогов'
+            else:
+                self.salary_gross = 'С вычетом налогов'
+            self.salary = '{0:,}'.format(int(float(self.salary_from))).replace(',', ' ') + ' - ' + \
+                '{0:,}'.format(int(float(self.salary_to))).replace(',', ' ') + ' (' + self.translate_currency[self.salary_currency]  + ')' \
+                + ' (' + self.salary_gross + ')'
 
 
 class DataSet:
-    def __init__(self, fileName, vacancyName):
+    def __init__(self, fileName, vacancyName, filterPar, sortPar, sortOrder, inDataNumbers):
         self.fileName = fileName
         self.vacancyName = vacancyName
+        self.filterPar = filterPar
+        self.sortPar = sortPar
+        self.sortOrder = sortOrder
+        self.inDataNumbers = inDataNumbers
+        self.vacancies_objects = []
+
+    translate_titles_dict = {'Название': 'name', 'Описание': 'description', 'Навыки': 'len_skills',
+                             'Опыт работы': 'experience',
+                             'Премиум-вакансия': 'premium', 'Компания': 'employer_name', 'Оклад': 'average_salary',
+                             'Идентификатор валюты оклада': 'salary_currency', 'Название региона': 'area_name',
+                             'Дата публикации вакансии': 'published'}
+
+    def csv_reader2(self):
+        r = open(self.fileName, encoding='utf-8-sig')
+        file = csv.reader(r)
+
+        titles = []
+        text = [x for x in file]
+        counter = 0
+        spes = []
+        for specialitiy in text:
+            if counter == 0:
+                titles = specialitiy
+                l = len(specialitiy)
+            else:
+                if len([parameter for parameter in specialitiy if parameter]) == l:
+                    spes.append(specialitiy)
+            counter += 1
+
+        newSpecialities = []
+        for eachList in spes:
+            newList = []
+            for x in eachList:
+                newList.append(x)
+
+            newSpecialities.append(newList)
+
+        for list1 in newSpecialities:
+            newDict = dict(zip(titles, list1))  # cоздали словарь
+            self.vacancies_objects.append(Vacancy(newDict))
+
+        if len(self.vacancies_objects) == 0 and len(titles) == 0:
+            print('Пустой файл')
+            quit()
+        elif len(self.vacancies_objects) == 0:
+            print('Нет данных')
+            quit()
 
     def csv_reader(self):
         r = open(self.fileName, encoding='utf-8-sig')
@@ -57,6 +174,51 @@ class DataSet:
             else:
                 if len([parameter for parameter in specialitiy if parameter]) == l:
                     yield dict(zip(titles, specialitiy))
+
+    sort_params = {
+        'Название': lambda vacancy, value: vacancy.name == value,
+        'Навыки': lambda vacancy, value: all([skill in vacancy.skills for skill in value.split(', ')]),
+        'Опыт работы': lambda vacancy, value: vacancy.experience_id == value,
+        'Премиум-вакансия': lambda vacancy, value: vacancy.premium == value,
+        'Компания': lambda vacancy, value: vacancy.employer_name == value,
+        'Оклад': lambda vacancy, value: vacancy.salary_from <= float(value) <= vacancy.salary_to,
+        'Идентификатор валюты оклада': lambda vacancy, value: vacancy.translate_currency[
+                                                                  vacancy.salary_currency] == value,
+        'Название региона': lambda vacancy, value: vacancy.area_name == value,
+        'Дата публикации вакансии': lambda vacancy, value: vacancy.published_at == value
+    }
+
+    def get_the_rows_for_table(self):
+        result = []
+        for item in self.vacancies_objects:
+            result.append(item.make_array())
+        return result
+
+    def filter_for_table_rows(self):
+        if len(self.filterPar) < 1:
+            return
+
+        result = filter(lambda x: self.sort_params[self.filterPar[0]](x, self.filterPar[1]), self.vacancies_objects)
+        self.vacancies_objects = list(result)
+
+    def sort_for_table_rows(self):
+        if self.sortPar == '' and self.sortOrder:
+            self.vacancies_objects.reverse()
+
+        elif self.sortPar != '':
+            self.vacancies_objects.sort(key=lambda x: getattr(x, DataSet.translate_titles_dict[self.sortPar]),
+                                        reverse=self.sortOrder)
+
+    def make_numbers_to_sort(self):
+        sort_order_len = len(self.inDataNumbers)
+        array = []
+
+        for number, item in enumerate(self.vacancies_objects):
+            if (sort_order_len > 1 and self.inDataNumbers[0] <= number < self.inDataNumbers[1]) or (
+                    sort_order_len == 1 and self.inDataNumbers[0] <= number) or sort_order_len == 0:
+                item.number = number + 1
+                array.append(item)
+        self.vacancies_objects = array
 
     @staticmethod
     def check_key(dictionary, key, var):
@@ -73,9 +235,9 @@ class DataSet:
 
         for dictionar in self.csv_reader():
             vacancy = Vacancy(dictionar)
-            self.check_key(salaryDict, vacancy.published_at, [vacancy.average_salary])
+            self.check_key(salaryDict, vacancy.year, [vacancy.average_salary])
             if vacancy.name.find(self.vacancyName) != -1:
-                self.check_key(vacancySalary, vacancy.published_at, [vacancy.average_salary])
+                self.check_key(vacancySalary, vacancy.year, [vacancy.average_salary])
             self.check_key(salaryArea, vacancy.area_name, [vacancy.average_salary])
             vacanciesCounter += 1
 
@@ -224,13 +386,13 @@ class Report:
             rounded = round(self.statistics_of_vacancy_by_year[item] * 100, 2)
             self.statistics_of_vacancy_by_year[item] = rounded
 
-        pdf_template = template.render({'name': self.vacancyName, 'path': '{0}/{1}'.format(pathlib.Path(__file__).parent.resolve(), 'graph.png'),
-                                        'reault_array': reault_array, 'result_statistics': self.result_statistics,
-                                        'statistics_of_vacancy_by_year': self.statistics_of_vacancy_by_year})
+        pdf_template = template.render(
+            {'name': self.vacancyName, 'path': '{0}/{1}'.format(pathlib.Path(__file__).parent.resolve(), 'graph.png'),
+             'reault_array': reault_array, 'result_statistics': self.result_statistics,
+             'statistics_of_vacancy_by_year': self.statistics_of_vacancy_by_year})
 
         config = pdfkit.configuration(wkhtmltopdf=r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe')
         pdfkit.from_string(pdf_template, 'report.pdf', configuration=config, options={"enable-local-file-access": ""})
-
 
     def generate_image(self):
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2)
@@ -299,26 +461,120 @@ class Report:
         list2[column + str(number + 1)].border = Border(left=thin, bottom=thin, right=thin, top=thin)
 
 
+class Table:
+    titles = ['№', 'Название', 'Описание', 'Навыки', 'Опыт работы', 'Премиум-вакансия', 'Компания', 'Оклад',
+              'Название региона', 'Дата публикации вакансии']
+
+    def __init__(self):
+        self.incorrectOutputs = []
+        self.fileName = input('Введите название файла: ')
+        self.filterPar = self.filter_needed(input('Введите параметр фильтрации: '))
+        self.sortPar = self.sortPar_needed(input('Введите параметр сортировки: '))
+        self.sortOrder = self.sortOrder_needed(input('Обратный порядок сортировки (Да / Нет): '))
+        self.inDataNumbers = self.in_data_numbers_needed(input('Введите диапазон вывода: '))
+        self.tableColums = self.in_data_names_needed(input('Введите требуемые столбцы: '))
+
+        if len(self.incorrectOutputs) > 0:
+            print(self.incorrectOutputs[0])
+            quit()
+
+        data_set = DataSet(self.fileName,'', self.filterPar, self.sortPar, self.sortOrder, self.inDataNumbers)
+        data_set.csv_reader2()
+        data_set.filter_for_table_rows()
+        data_set.sort_for_table_rows()
+        data_set.make_numbers_to_sort()
+
+        if len(data_set.get_the_rows_for_table()) == 0:
+            print('Ничего не найдено')
+        else:
+            table = PrettyTable()
+            table.hrules = ALL
+            table.align = 'l'
+            table.field_names = Table.titles
+            table._max_width = {"№": 20, "Название": 20, "Описание": 20,
+                                "Навыки": 20, "Опыт работы": 20, "Премиум-вакансия": 20,
+                                "Компания": 20, "Оклад": 20, "Название региона": 20, "Дата публикации вакансии": 20}
+            table.add_rows(data_set.get_the_rows_for_table())
+            print(table.get_string(fields=self.tableColums))
+
+    def filter_needed(self, filterPar):
+        filter_is_needed = len(filterPar) > 1
+        if not filter_is_needed:
+            return []
+        if filter_is_needed:
+            if ':' not in filterPar:
+                self.incorrectOutputs.append('Формат ввода некорректен')
+                return []
+
+            filterPar = filterPar.split(': ')
+            if (not filterPar[0] in Table.titles) and filterPar[0] != 'Идентификатор валюты оклада':
+                self.incorrectOutputs.append('Параметр поиска некорректен')
+                return []
+
+        return filterPar
+
+    def sortPar_needed(self, sortPar):
+        sortPar_is_needed = len(sortPar) > 1
+        if sortPar_is_needed:
+            if sortPar not in Table.titles:
+                self.incorrectOutputs.append('Параметр сортировки некорректен')
+        return sortPar
+
+    def sortOrder_needed(self, sortOrder):
+        sort_order_needed = len(str(sortOrder)) > 1
+        if sort_order_needed:
+            if sortOrder != 'Да' and sortOrder != 'Нет':
+                self.incorrectOutputs.append('Порядок сортировки задан некорректно')
+        if sortOrder == 'Да':
+            return True
+        else:
+            return False
+
+    def in_data_numbers_needed(self, inDataNumbers):
+        arrOfinDataNumbers = []
+
+        if inDataNumbers == '':
+            return []
+        else:
+            for a in inDataNumbers.split(' '):
+                arrOfinDataNumbers.append(int(a) - 1)
+            return arrOfinDataNumbers
+
+        return [] if sort_range == '' else [int(limit) - 1 for limit in sort_range.split()]
+
+    def in_data_names_needed(self, tableColums):
+        if len(tableColums) == 0:
+            return Table.titles
+        else:
+            arrOfinDataNames = tableColums.split(', ')
+            arrOfinDataNames.insert(0, '№')
+            return arrOfinDataNames
+
+
 class InputConnect:
     def __init__(self):
-        self.fileName = input(requests[0])
-        self.vacancyName = input(requests[1])
-        data_set = DataSet(self.fileName, self.vacancyName)
-        statistics, statistics_of_salary_by_vacancy, statistics_of_salary_by_area, temp_dict_of_statistics, result_statistics, statistics_of_vacancy_by_year = data_set.make_statistic_data()
+        output = False if input("(Статистика/Вакансии): ") == "Статистика" else True
+        if output:
+            Table()
+        else:
+            self.fileName = input(requests[0])
+            self.vacancyName = input(requests[1])
+            data_set = DataSet(self.fileName, self.vacancyName, '', '', '', '')
+            statistics, statistics_of_salary_by_vacancy, statistics_of_salary_by_area, temp_dict_of_statistics, result_statistics, statistics_of_vacancy_by_year = data_set.make_statistic_data()
 
-        print('Динамика уровня зарплат по годам: {0}'.format(statistics))
-        print('Динамика количества вакансий по годам: {0}'.format(statistics_of_salary_by_vacancy))
-        print('Динамика уровня зарплат по годам для выбранной профессии: {0}'.format(statistics_of_salary_by_area))
-        print('Динамика количества вакансий по годам для выбранной профессии: {0}'.format(temp_dict_of_statistics))
-        print('Уровень зарплат по городам (в порядке убывания): {0}'.format(result_statistics))
-        print('Доля вакансий по городам (в порядке убывания): {0}'.format(statistics_of_vacancy_by_year))
+            print('Динамика уровня зарплат по годам: {0}'.format(statistics))
+            print('Динамика количества вакансий по годам: {0}'.format(statistics_of_salary_by_vacancy))
+            print('Динамика уровня зарплат по годам для выбранной профессии: {0}'.format(statistics_of_salary_by_area))
+            print('Динамика количества вакансий по годам для выбранной профессии: {0}'.format(temp_dict_of_statistics))
+            print('Уровень зарплат по городам (в порядке убывания): {0}'.format(result_statistics))
+            print('Доля вакансий по городам (в порядке убывания): {0}'.format(statistics_of_vacancy_by_year))
 
-        report = Report(self.vacancyName, statistics, statistics_of_salary_by_vacancy, statistics_of_salary_by_area,
-                        temp_dict_of_statistics, result_statistics, statistics_of_vacancy_by_year)
-        report.generate_excel()
-        report.wb.save(filename='report.xlsx')
-        report.generate_image()
-        report.generate_pdf()
+            report = Report(self.vacancyName, statistics, statistics_of_salary_by_vacancy, statistics_of_salary_by_area,
+                            temp_dict_of_statistics, result_statistics, statistics_of_vacancy_by_year)
+            report.generate_excel()
+            report.wb.save(filename='report.xlsx')
+            report.generate_image()
+            report.generate_pdf()
 
 
 if __name__ == '__main__':
