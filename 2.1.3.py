@@ -10,6 +10,8 @@ import numpy as np
 from jinja2 import Environment, FileSystemLoader
 import pathlib
 import pdfkit
+#that is the string i am going to change!!!!!!
+polina_name = 'sandra'
 
 requests = ["Введите название файла: ", "Введите название профессии: "]
 
