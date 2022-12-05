@@ -17,8 +17,11 @@ requests = ["Введите название файла: ", "Введите на
 
 
 class Vacancy:
+    """ Класс для представления вакансий, работы с ними.
+    """
     names = ['number', 'name', 'description', 'key_skills', 'experience_id', 'premium', 'employer_name', 'salary',
              'area_name', 'published_at']
+    """ Заголовки csv файла """
 
     currency_to_rub = {
         "AZN": 35.68,
@@ -32,14 +35,29 @@ class Vacancy:
         "USD": 60.66,
         "UZS": 0.0055,
     }
+    """ Массив для конвертации рублей в другую нужную нам валюту. """
 
     @staticmethod
     def format_string(x):
+        """ Очищает строку от html-тегов
+        Args:
+            str: строка
+        Returns:
+            str: строка, очищенная от тегов
+
+        """
         str = re.sub(r'<.*?>', '', x)
         return re.sub(r'\s+', ' ', str).strip()
 
     @staticmethod
     def cut_the_str(str):
+        """ Обрезает строку до заданного размера в 100 символов, оставляя троеточие в конце.
+        Args:
+            str: строка, которую нужно обрезать
+
+        Returns:
+            str: обрезанная строка
+        """
         if len(str) > 100:
             newstr = (str[:100] + '...')
         else:
@@ -48,6 +66,10 @@ class Vacancy:
 
     @property
     def experience(self):
+        """ Переводит в нужный формат опыт, заданный в словаре с помощью целых чисел от  0 до 3 для удобства сравнения.
+        Returns: изменённый словарь
+
+        """
         return self.experience_items[self.experience_id]
 
     experience_items = {
@@ -68,6 +90,7 @@ class Vacancy:
         'USD': 'Доллары',
         'UZS': 'Узбекский сум'
     }
+    """ Словарь для перевода валюты с англ на рус. """
     translate_experience = {
         'noExperience': 'Нет опыта',
         'between1And3': 'От 1 года до 3 лет',
@@ -75,13 +98,23 @@ class Vacancy:
         'moreThan6': 'Более 6 лет',
     }
 
+    """ Словарь для перевода опыта. """
+
     def make_array(self):
+        """ Создаёт список из заголовков.
+        Returns: полученный список
+
+        """
         result = []
         for key in self.names:
             result.append(getattr(self, key))
         return result
 
     def __init__(self, vacancy):
+        """ Инициализирует объект Vacancy, выполняет конвертацию для целых чисел, форматирует строки, приводя их в нужный формат.
+        Args:
+            vacancy: вакансия с данными
+        """
         self.name = vacancy['name']
         self.salary_from = int(vacancy['salary_from'].split('.')[0])
         self.salary_to = int(vacancy['salary_to'].split('.')[0])
@@ -112,9 +145,24 @@ class Vacancy:
                 '{0:,}'.format(int(float(self.salary_to))).replace(',', ' ') + ' (' + self.translate_currency[self.salary_currency]  + ')' \
                 + ' (' + self.salary_gross + ')'
 
+        """ Проверяет наличие всех параметров у вакансии, затем, если условие выполняется, выполняет форматирование строк 
+        (обрезка и очистка от тегов); приводит навыки в нужный формат, разделяя переносом строки; переводит на русский необходимые строки; 
+        задаёт нужный формат даты
+        """
+
 
 class DataSet:
+    """ Класс для представления базы данных. """
     def __init__(self, fileName, vacancyName, filterPar, sortPar, sortOrder, inDataNumbers):
+        """
+        Args:
+            fileName: Имя файла, идущего на вход
+            vacancyName: Название вакансии
+            filterPar: Параметр фильтрации
+            sortPar: Параметр сортировки
+            sortOrder: Порядок сортировки
+            inDataNumbers: Количество выводимых столбцов
+        """
         self.fileName = fileName
         self.vacancyName = vacancyName
         self.filterPar = filterPar
@@ -129,7 +177,11 @@ class DataSet:
                              'Идентификатор валюты оклада': 'salary_currency', 'Название региона': 'area_name',
                              'Дата публикации вакансии': 'published'}
 
+    """ Словарь, который переводит заголовки. """
+
     def csv_reader2(self):
+        """ Приводит csv файл, идущий на вход, к нужному формату, создаёт словарь из вакансий, находищихся в файле,
+        далее осуществляет проверку на наличие данных в файле, а также их достаточность. """
         r = open(self.fileName, encoding='utf-8-sig')
         file = csv.reader(r)
 
@@ -166,6 +218,8 @@ class DataSet:
             quit()
 
     def csv_reader(self):
+        """ Возвращает словарь из вакансий, находищихся в файле, отдельно создавая список с заголовками.
+        """
         r = open(self.fileName, encoding='utf-8-sig')
         file = csv.reader(r)
         titles = []
@@ -190,13 +244,24 @@ class DataSet:
         'Дата публикации вакансии': lambda vacancy, value: vacancy.published_at == value
     }
 
+    """ Словарь, выполняющий роль указания параметра сортировки для каждого раздела вакансии, и, соответственно, сортирующий его (раздел).
+    """
+
     def get_the_rows_for_table(self):
+        """ Создаёт список для вакансий.
+        Returns: вакансии списком.
+
+        """
         result = []
         for item in self.vacancies_objects:
             result.append(item.make_array())
         return result
 
     def filter_for_table_rows(self):
+        """ Выполняет фильтр по заданным критериям, прежде проверив, нужен ли он.
+        Returns: отфильтрованный список вакансий в соответствии с заданным фильтром, идущим на вход.
+
+        """
         if len(self.filterPar) < 1:
             return
 
@@ -204,6 +269,8 @@ class DataSet:
         self.vacancies_objects = list(result)
 
     def sort_for_table_rows(self):
+        """ Проверяет наличие необходимости сортировки вакансий. Осуществляет по необходимости обратную сортировку, либо обычную.
+        """
         if self.sortPar == '' and self.sortOrder:
             self.vacancies_objects.reverse()
 
@@ -212,6 +279,9 @@ class DataSet:
                                         reverse=self.sortOrder)
 
     def make_numbers_to_sort(self):
+        """ Осуществляет изменение или оставление изначального выводимого количества столбцов в соответствии
+         с введёнными данными диапозона вывода.
+        """
         sort_order_len = len(self.inDataNumbers)
         array = []
 
@@ -224,15 +294,24 @@ class DataSet:
 
     @staticmethod
     def check_key(dictionary, key, var):
+        """ Проверяет наличие ключа в словаре, в соответствии с этим меняя его
+        """
         if key in dictionary:
             dictionary[key] += var
         else:
             dictionary[key] = var
 
     def make_statistic_data(self):
+        """ Осуществляет статистику данных.
+        Returns: Статистика для каждого необходимого параметра
+
+        """
         salaryDict = {}
+        # словарь для зарплат
         salaryArea = {}
+        # словарь для зарплат, сортирующихся по городам
         vacancySalary = {}
+        # словарь для зарплат по городам
         vacanciesCounter = 0
 
         for dictionar in self.csv_reader():
@@ -292,6 +371,13 @@ class DataSet:
 
     @staticmethod
     def count_average_number(dict_to_count):
+        """ Вычисляет средние значения под каждым ключом в словаре.
+        Args:
+            dict_to_count: словарь с данными
+
+        Returns: новый словарь, содержащий вычисленные средние значения.
+
+        """
         result = {}
         for key, value in dict_to_count.items():
             a = sum(value)
@@ -301,8 +387,20 @@ class DataSet:
 
 
 class Report:
+    """ Класс для представления данных в виде файла формата pdf, png, содержащих таблицы и графики.
+    """
     def __init__(self, vacancyName, statistics, statistics_of_salary_by_vacancy, statistics_of_salary_by_area,
                  temp_dict_of_statistics, result_statistics, statistics_of_vacancy_by_year):
+        """ Инициализирует объект Report и атрибуты класса.
+        Args:
+            vacancyName (str) : Название вакансии
+            statistics (dict): Статистика зарплаты по годам
+            statistics_of_salary_by_vacancy (dict): Статистика уровня зарплаты по названию вакансии
+            statistics_of_salary_by_area (dict): Статистика уровня зарплаты по городам
+            temp_dict_of_statistics (dict): Словарь статистики
+            result_statistics (dict): Результат статистики на выход
+            statistics_of_vacancy_by_year (dict): Статистика долей вакансии по годам
+        """
         self.wb = Workbook()
         self.vacancyName = vacancyName
         self.statistics = statistics
@@ -313,14 +411,18 @@ class Report:
         self.statistics_of_vacancy_by_year = statistics_of_vacancy_by_year
 
     def generate_excel(self):
+        """ Генерирует excel файл, содержащий два листа, в каждом статистику в виде таблиц.
+        """
         list1 = self.wb.active
         list1.title = 'Статистика по годам'
         array_for_titles = ['Год', 'Средняя зарплата', 'Средняя зарплата - ' + self.vacancyName, 'Количество вакансий',
                             'Количество вакансий - ' + self.vacancyName]
+
         list1.append(array_for_titles)
         for date in self.statistics.keys():
             list1.append([date, self.statistics[date], self.statistics_of_salary_by_area[date],
                           self.statistics_of_salary_by_vacancy[date], self.temp_dict_of_statistics[date]])
+        """ Заполняет таблицу данными статистики """
 
         titles = [['Год ', 'Средняя зарплата ', ' Средняя зарплата - ' + self.vacancyName, ' Количество вакансий',
                    ' Количество вакансий - ' + self.vacancyName]]
@@ -328,6 +430,7 @@ class Report:
         for number in titles:
             for i, element in enumerate(number):
                 widthOfColums = self.set_colums_length(element, i, widthOfColums)
+        """ Вычисляет и устанавливает необходимую ширину колонок """
 
         for i, j in enumerate(widthOfColums, 1):
             converted_var = get_column_letter(i)
@@ -361,9 +464,13 @@ class Report:
             list1[column + '1'].font = bold
             list2[column + '1'].font = bold
 
+        """ Задаём шрифт """
+
         for x, y in enumerate(self.result_statistics):
             string_for_x = str(x + 2)
             list2['E' + string_for_x].number_format = '0.00%'
+
+        """ Применяем нужный формат для вывода доли вакансий """
 
         thin = Side(border_style='thin', color='00000000')
 
@@ -377,16 +484,27 @@ class Report:
 
         self.wb.save('report.xlsx')
 
+        """ Ограничивает столбцы и строки таблицы нужного интервала границей с указанными параметрами и сохраняет файл с названием
+        report.xlsx в корневую папку """
+
     def generate_pdf(self):
+        """ Генерирует pdf файл с графиками, диаграммами  и таблицами.
+        """
         env = Environment(loader=FileSystemLoader('.'))
         template = env.get_template("python.html")
+        """ Указываем файл html формата, написанного отдельно, с выбранными стилями для создания pdf файла """
         reault_array = []
         for date in self.statistics.keys():
             reault_array.append([date, self.statistics[date], self.statistics_of_salary_by_vacancy[date],
                                  self.statistics_of_salary_by_area[date], self.temp_dict_of_statistics[date]])
+
+        """ Создаёт список и заполняет его данными статистики """
+
         for item in self.statistics_of_vacancy_by_year:
             rounded = round(self.statistics_of_vacancy_by_year[item] * 100, 2)
             self.statistics_of_vacancy_by_year[item] = rounded
+
+        """ Задаёт формат вывода числа для статистики доли вакансий по годам """
 
         pdf_template = template.render(
             {'name': self.vacancyName, 'path': '{0}/{1}'.format(pathlib.Path(__file__).parent.resolve(), 'graph.png'),
@@ -397,6 +515,8 @@ class Report:
         pdfkit.from_string(pdf_template, 'report.pdf', configuration=config, options={"enable-local-file-access": ""})
 
     def generate_image(self):
+        """ Генерирует файл png формата, отображающий 4 блока с диаграммами статистики.
+        """
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2)
 
         ax1.set_title('Уровень зарплат по годам', fontdict={'fontsize': 12})
@@ -409,6 +529,7 @@ class Report:
         ax1.set_xticks(np.array(list_for_stats) - 0.2, list_for_stats, rotation=90)
         ax1.xaxis.set_tick_params(labelsize=8)
         ax1.yaxis.set_tick_params(labelsize=8)
+
 
         list_for_salary_stats = list(self.statistics_of_salary_by_vacancy.keys())
         ax2.set_title('Количество вакансий по годам', fontdict={'fontsize': 12})
@@ -451,6 +572,15 @@ class Report:
         plt.savefig('graph.png')
 
     def set_colums_length(self, element, i, widthOfColums):
+        """ Устанавливает ширину колонок таблицы.
+        Args:
+            element: Данные для колонки
+            i: Количество
+            widthOfColums: Ширина колонки
+
+        Returns (int) : Изменённая ширина колонки
+
+        """
         length = len(element)
         if len(widthOfColums) > i:
             if length > widthOfColums[i]:
@@ -460,14 +590,19 @@ class Report:
         return widthOfColums
 
     def make_border(self, column, number, thin, list2):
+        """ Устанавливает параметры для границ столбцов и строк таблицы.
+        """
         list2[column + str(number + 1)].border = Border(left=thin, bottom=thin, right=thin, top=thin)
 
 
 class Table:
+    """ Класс для представления таблицы. """
     titles = ['№', 'Название', 'Описание', 'Навыки', 'Опыт работы', 'Премиум-вакансия', 'Компания', 'Оклад',
               'Название региона', 'Дата публикации вакансии']
 
     def __init__(self):
+        """ Инициализирует объект Table, определяет выводимые запросы.
+        """
         self.incorrectOutputs = []
         self.fileName = input('Введите название файла: ')
         self.filterPar = self.filter_needed(input('Введите параметр фильтрации: '))
@@ -500,6 +635,14 @@ class Table:
             print(table.get_string(fields=self.tableColums))
 
     def filter_needed(self, filterPar):
+        """ Проверяет, нужен ли фильтр, выводит соответствующие ошибки, если он задан некорректно, или, если формат верный,
+        возвращает строку, описывающую фильтр.
+        Args:
+            filterPar (str): Параметр фильтрации
+
+        Returns (str): Строка с параметром фильтрации
+
+        """
         filter_is_needed = len(filterPar) > 1
         if not filter_is_needed:
             return []
@@ -516,6 +659,14 @@ class Table:
         return filterPar
 
     def sortPar_needed(self, sortPar):
+        """ Проверяет сортировку на корректность и существует ли она, или, если строка, введённая пользователем, осталась пустой,
+        возвращает её же.
+        Args:
+            sortPar (str): Параметр сортировки
+
+        Returns: Строка с параметром сортировки
+
+        """
         sortPar_is_needed = len(sortPar) > 1
         if sortPar_is_needed:
             if sortPar not in Table.titles:
@@ -523,6 +674,14 @@ class Table:
         return sortPar
 
     def sortOrder_needed(self, sortOrder):
+        """ Проверяет порядок сортировки (обратный он или нет) и корректность. Выводит либо "ДА", либо "НЕТ", либо ошибку,
+        если порядок задан некорректно.
+        Args:
+            sortOrder (str): Порядок сортировки.
+
+        Returns (bool): Наличие или отсутствие обратного порядка сортировки.
+
+        """
         sort_order_needed = len(str(sortOrder)) > 1
         if sort_order_needed:
             if sortOrder != 'Да' and sortOrder != 'Нет':
@@ -533,6 +692,13 @@ class Table:
             return False
 
     def in_data_numbers_needed(self, inDataNumbers):
+        """ Проверяет, какой диапазон вакансий нужен на вывод.
+        Args:
+            inDataNumbers (str): Диапазон вакансий, введённых пользователем.
+
+        Returns (list[int]): Список, сотоящий из двух параметров: от какого номера нужно вывести данные и до какого.
+
+        """
         arrOfinDataNumbers = []
 
         if inDataNumbers == '':
@@ -545,6 +711,13 @@ class Table:
         return [] if sort_range == '' else [int(limit) - 1 for limit in sort_range.split()]
 
     def in_data_names_needed(self, tableColums):
+        """ Проверяет, какие конкретно столбцы нужно выводить.
+        Args:
+            tableColums (str): Столбцы, состоящий из названий заголовков.
+
+        Returns (list): Список с нужными заголовками, либо всеми, если параметр, введённый пользователем, остался пустым.
+
+        """
         if len(tableColums) == 0:
             return Table.titles
         else:
@@ -554,7 +727,13 @@ class Table:
 
 
 class InputConnect:
+    """ Класс для обработки параметров, вводимых пользователем: фильтры, сортировка, диапазон вывода,
+    требуемые столбцы и вывод таблицы на экран """
     def __init__(self):
+        """ Инициализирует объект InputConnect. Проверяет, нужна на вывод статистика или вакансии, и, в соответствии
+        с введённым пользователем запросом, выволняет вывод дальнейших данных. Также обращается к классу Report и
+        формирует файлы, которые сохраняются в корневой директории и являются результатом программы.
+        """
         output = False if input("(Статистика/Вакансии): ") == "Статистика" else True
         if output:
             Table()
