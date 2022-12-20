@@ -10,14 +10,36 @@ import numpy as np
 from jinja2 import Environment, FileSystemLoader
 import pathlib
 import pdfkit
+import doctest
 #that is the string i am going to change!!!!!!
 polina_name = 'sandra'
 
 requests = ["Введите название файла: ", "Введите название профессии: "]
 
 
+
 class Vacancy:
     """ Класс для представления вакансий, работы с ними.
+
+
+        >>> Vacancy({'name': 'Программист', 'salary_from': '10000.0', 'salary_to': '35000.0', 'salary_currency': 'RUR', \
+        'area_name': 'Москва', 'published_at': '2022-05-31T17:32:31+0300'}).salary_to
+        35000
+
+        >>> Vacancy({'name': 'Программист', 'salary_from': '10000.0', 'salary_to': '35000.0', 'salary_currency': 'RUR', \
+        'area_name': 'Москва', 'published_at': '2022-05-31T17:32:31+0300'}).salary_from
+        10000
+
+        >>> Vacancy({'name': 'Программист', 'salary_from': '10000.0', 'salary_to': '35000.0', 'salary_currency': 'RUR', \
+        'area_name': 'Москва', 'published_at': '2022-05-31T17:32:31+0300'}).salary_currency
+        'RUR'
+
+        >>> Vacancy({'name': 'Программист', 'salary_from': '10000.0', 'salary_to': '35000.0', 'salary_currency': 'RUR', \
+        'area_name': 'Москва', 'published_at': '2022-05-31T17:32:31+0300'}).year
+        2022
+
+
+
     """
     names = ['number', 'name', 'description', 'key_skills', 'experience_id', 'premium', 'employer_name', 'salary',
              'area_name', 'published_at']
@@ -114,6 +136,9 @@ class Vacancy:
         """ Инициализирует объект Vacancy, выполняет конвертацию для целых чисел, форматирует строки, приводя их в нужный формат.
         Args:
             vacancy: вакансия с данными
+
+
+
         """
         self.name = vacancy['name']
         self.salary_from = int(vacancy['salary_from'].split('.')[0])
@@ -162,6 +187,12 @@ class DataSet:
             sortPar: Параметр сортировки
             sortOrder: Порядок сортировки
             inDataNumbers: Количество выводимых столбцов
+
+            >>> type(DataSet("D:/пользователи/OneDrive/Рабочий стол/vacancies.csv", "Программист", "RUR", "Название", "Да", "1 9")).__name__
+            'DataSet'
+
+
+
         """
         self.fileName = fileName
         self.vacancyName = vacancyName
@@ -760,3 +791,5 @@ class InputConnect:
 
 if __name__ == '__main__':
     InputConnect()
+
+    doctest.testmod()
