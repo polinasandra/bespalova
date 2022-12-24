@@ -13,3 +13,5 @@
 ![Скриншот 23-12-2022 170514](https://user-images.githubusercontent.com/113704972/209334188-af5e8233-1be9-424d-87be-6ba553ea29c8.jpg)
 ![Скриншот 23-12-2022 170531](https://user-images.githubusercontent.com/113704972/209334200-cdbb0ef2-f153-4f9b-9420-c47491e872ae.jpg)
 ![Скриншот 23-12-2022 170542](https://user-images.githubusercontent.com/113704972/209334216-70c3caf9-bbbd-4183-9a66-858e352e058f.jpg)
+# Задание 3.2.1 - Профилирование. Скриношоты:
+![Скриншот 24-12-2022 143802](https://user-images.githubusercontent.com/113704972/209431022-f15ca4b2-76b6-46fa-84e7-e60854f17a18.jpg)
