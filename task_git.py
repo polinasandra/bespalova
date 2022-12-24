@@ -11,6 +11,9 @@ from jinja2 import Environment, FileSystemLoader
 import pathlib
 import pdfkit
 import doctest
+import hashlib
+import cProfile
+
 #that is the string i am going to change!!!!!!
 polina_name = 'sandra'
 
@@ -20,7 +23,6 @@ requests = ["Введите название файла: ", "Введите на
 
 class Vacancy:
     """ Класс для представления вакансий, работы с ними.
-
 
         >>> Vacancy({'name': 'Программист', 'salary_from': '10000.0', 'salary_to': '35000.0', 'salary_currency': 'RUR', \
         'area_name': 'Москва', 'published_at': '2022-05-31T17:32:31+0300'}).salary_to
@@ -37,8 +39,6 @@ class Vacancy:
         >>> Vacancy({'name': 'Программист', 'salary_from': '10000.0', 'salary_to': '35000.0', 'salary_currency': 'RUR', \
         'area_name': 'Москва', 'published_at': '2022-05-31T17:32:31+0300'}).year
         2022
-
-
 
     """
     names = ['number', 'name', 'description', 'key_skills', 'experience_id', 'premium', 'employer_name', 'salary',
@@ -790,6 +790,8 @@ class InputConnect:
 
 
 if __name__ == '__main__':
+    profiler = cProfile.Profile()
+    profiler.enable()
     InputConnect()
-
-    doctest.testmod()
+    profiler.disable()
+    profiler.print_stats(1)

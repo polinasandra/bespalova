@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>report</title>
+</head>
+<body>
+    <style>
+        body {
+            font-family: 'Verdana', sans-serif;
+            padding: 0 16px;
+        }
+        h1, h2 {
+            text-align: center;
+        }
+        .w-full {
+            width: 100%;
+        }
+        table {
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 5px;
+            border: 1px solid black;
+            text-align: center;
+        }
+    </style>
+    <h1>Аналитика по зарплатам и городам для профессии {{ name }}</h1>
+    <img class="w-full" src="{{ path }}" alt="graph.png">
+    <h2>Статистика по годам</h2>
+    <table class="w-full">
+        <thead>
+            <tr>
+                <th>Год</th>
+                <th>Средняя зарплата</th>
+                <th>Средняя зарплата - {{ name }}</th>
+                <th>Количество вакансий</th>
+                <th>Количество вакансий - {{ name }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for i in reault_array %}
+                <tr>
+                    <td>{{ i[0] }}</td>
+                    <td>{{ i[1] }}</td>
+                    <td>{{ i[2] }}</td>
+                    <td>{{ i[3] }}</td>
+                    <td>{{ i[4] }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <h2>Статистика по городам</h2>
+
+    <table class="table1">
+        <style>
+            .table1 {
+                width: 48%; 
+                float: left;
+            }
+        </style>
+        <thead>
+            <tr>
+                <th>Город</th>
+                <th>Уровень зарплат</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for area, item in result_statistics.items() %}
+                <tr>
+                    <td>{{ area }}</td>
+                    <td>{{ item }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <table class="table2">
+        <style>
+            .table2 {
+                width: 48%; 
+                float: right;
+            }
+        </style>
+        <thead>
+            <tr>
+                <th>Город</th>
+                <th>Доля вакансий</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for area, item in statistics_of_vacancy_by_year.items() %}
+                <tr>
+                    <td>{{ area }}</td>
+                    <td>{{ item }}%</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
