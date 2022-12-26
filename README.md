@@ -25,3 +25,5 @@
 ## Код лежит в папке "new"
 Время исполнения программы при использовании Concurrent futures:
 ![Скриншот 26-12-2022 153217](https://user-images.githubusercontent.com/113704972/209538884-e7942260-a222-4370-abfb-11abfde3e2e8.jpg)
+Прикрепляю также скриншот с частью кода, где использую и Concurrent futures, и multiprocessing:
+![Скриншот 26-12-2022 173334](https://user-images.githubusercontent.com/113704972/209549547-b908f9be-bad3-4a6b-9b3c-ba8ef791c1ff.jpg)
