@@ -1,14 +1,13 @@
 import pandas as pd
 import threading
 
-
 def write_chunk_to_file(df: pd.DataFrame, file_name):
     df.to_csv(path_or_buf=file_name, index=False, encoding='utf-8-sig')
     """ Получает на вход объект pandas.DataFrame и название файла, потом записывает
      всё это в .csv """
 
 
-file_to_parse = input('Введите название файла: ') # vacancies_by_year.csv
+file_to_parse = 'vacancies_by_year.csv' #input('Введите название файла: ') # vacancies_by_year.csv
 arr_of_titles = ['name', 'salary_from', 'salary_to', 'salary_currency', 'area_name', 'published_at']
 
 data = pd.read_csv(file_to_parse)

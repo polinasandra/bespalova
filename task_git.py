@@ -137,8 +137,6 @@ class Vacancy:
         Args:
             vacancy: вакансия с данными
 
-
-
         """
         self.name = vacancy['name']
         self.salary_from = int(vacancy['salary_from'].split('.')[0])
@@ -188,7 +186,7 @@ class DataSet:
             sortOrder: Порядок сортировки
             inDataNumbers: Количество выводимых столбцов
 
-            >>> type(DataSet("D:/пользователи/OneDrive/Рабочий стол/vacancies.csv", "Программист", "RUR", "Название", "Да", "1 9")).__name__
+            >>> type(DataSet("D:/пользователи/OneDrive/Рабочий стол/vacancies_by_year.csv", "Программист", "RUR", "Название", "Да", "1 9")).__name__
             'DataSet'
 
 
@@ -635,7 +633,7 @@ class Table:
         """ Инициализирует объект Table, определяет выводимые запросы.
         """
         self.incorrectOutputs = []
-        self.fileName = input('Введите название файла: ')
+        self.fileName = 'vacancies_by_year.csv' #input('Введите название файла: ')
         self.filterPar = self.filter_needed(input('Введите параметр фильтрации: '))
         self.sortPar = self.sortPar_needed(input('Введите параметр сортировки: '))
         self.sortOrder = self.sortOrder_needed(input('Обратный порядок сортировки (Да / Нет): '))
